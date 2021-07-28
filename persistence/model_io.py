@@ -42,7 +42,7 @@ if keras_available:
         return keras.models.load_model(path)
 
     exporters.append(save_keras)
-    exporters.append(load_keras)
+    importers.append(load_keras)
 
 if joblib_available:
     def save_pickle(model, path: Path):
@@ -52,7 +52,7 @@ if joblib_available:
         return joblib.load(path)
         
     exporters.append(save_pickle)
-    exporters.append(load_pickle)
+    importers.append(load_pickle)
 
 def save(model, path: Path) -> None:
     # Save a model to a file
