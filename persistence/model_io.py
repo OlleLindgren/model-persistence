@@ -2,30 +2,22 @@ from pathlib import Path
 
 KERAS_MODEL_SAVE_FORMAT = 'tf'
 
-def get_keras():
-    # Try to import keras. Return (keras, True) or (None, False) depending on result.
+# Try to import keras. Return (keras, True) or (None, False) depending on result.
+keras = None
+try:
+    import keras
+except ImportError:
     try:
-        import keras
-        return keras, True
-    except:
-        try:
-            from tensorflow import keras
-            return keras, True
-        except:
-            pass
-    return None, False
+        from tensorflow import keras
+    except ImportError:
+        pass
 
-def get_joblib():
-    # Try to import joblib. Return (joblib, True) or (None, False) depending on result.
-    try:
-        import joblib
-        return joblib, True
-    except:
-        return None, False
-
-# Try to get import/export libraries
-keras, keras_available = get_keras()
-joblib, joblib_available = get_joblib()
+# Try to import joblib. Return (joblib, True) or (None, False) depending on result.
+joblib = None
+try:
+    import joblib
+except ImportError:
+    pass
 
 # Initialize importer/exporter lists
 importers = []
@@ -33,7 +25,7 @@ exporters = []
 
 # Fill importer/exporter lists
 
-if keras_available:
+if keras:
     def save_keras(model: keras.Model, path: Path):
         model.save(path, 
             save_format=KERAS_MODEL_SAVE_FORMAT)
@@ -44,7 +36,7 @@ if keras_available:
     exporters.append(save_keras)
     importers.append(load_keras)
 
-if joblib_available:
+if joblib:
     def save_pickle(model, path: Path):
         joblib.dump(model, path)
     
@@ -73,10 +65,10 @@ def load(path: Path):
             result = import_func(path)
             assert result is not None
             return result
-        except:
+        except BaseException as err:
             pass
     
-    return None
+    raise err
 
 # Check that any exporters/importers were successfully loaded
 assert len(importers) > 0, "No import libraries available. tensorflow or joblib is required, depending on what models you want to load."

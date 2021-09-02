@@ -3,7 +3,7 @@ from pathlib import Path
 import datetime
 import json
 
-from typing import Any, Callable
+from typing import Iterable
 
 if __package__:
     from .dependencies import DependencySpec
@@ -19,29 +19,40 @@ X_SPEC_FILENAME: str = "X_spec.json"
 Y_SPEC_FILENAME: str = "y_spec.json"
 EXTRAS_FILENAME: str = "extras.json"
 
+from abc import ABC, abstractmethod
+
+class BaseEstimator(ABC):
+
+    @abstractmethod
+    def fit(X: Iterable, y: Iterable) -> None:
+        pass
+    
+    @abstractmethod
+    def predict(X: Iterable) -> Iterable:
+        pass
+
 class ModelContainer:
 
-    model: Any
-    X_spec: DependencySpec
-    y_spec: DependencySpec
-    dt: datetime.timedelta
-    eval_metrics: dict
+    def __init__(self, 
+            model: BaseEstimator, 
+            X_spec: DependencySpec, 
+            y_spec: DependencySpec, 
+            dt: datetime.timedelta = datetime.timedelta(seconds=0), 
+            eval_metrics=None
+        ) -> None:
 
-    save_model: Callable
-
-    def __init__(self, model, X_spec, y_spec, dt: datetime.timedelta = datetime.timedelta(seconds=0), eval_metrics=None) -> None:
-        
         assert hasattr(model, "predict"), "model must implement 'predict'"
         assert hasattr(model, "fit"), "model must implement 'fit'"
 
         if eval_metrics:
-            assert isinstance(eval_metrics, dict), "eval_metrics must be a dict of {metric: value} pairs"
+            assert isinstance(eval_metrics, dict), \
+            "eval_metrics (if provided) must be a dict of {metric: value} pairs"
 
-        self.model=model
-        self.X_spec=X_spec
-        self.y_spec=y_spec
-        self.dt=dt
-        self.eval_metrics=eval_metrics or {}
+        self.model: BaseEstimator = model
+        self.X_spec: DependencySpec = X_spec
+        self.y_spec: DependencySpec = y_spec
+        self.dt: datetime.timedelta = dt
+        self.eval_metrics: dict = eval_metrics or {}
 
     @staticmethod
     def __model_save_paths(save_root: Path):
