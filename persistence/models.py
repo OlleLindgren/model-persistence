@@ -93,7 +93,7 @@ class ModelContainer:
 
         # Ensure parent folder exists
         if not os.path.isdir(path):
-            os.mkdir(path)
+            os.makedirs(path)
 
         # Save model and specs
         model_io.save(self.model, model_path)
