@@ -11,10 +11,10 @@ class DependencySpec:
         
         # Validate inputs
         assert len(dependencies) > 0
-        assert sorted(list(set(dependencies))) == dependencies, 'dependencies must be sorted and unique'
+        assert len(set(dependencies)) == len(dependencies), 'dependencies must be unique'
         
         # Save dependencies
-        self.dependencies = dependencies
+        self.dependencies = sorted(dependencies)
 
         # Save additional kwargs in self.meta
         self.meta = meta or {}
@@ -27,13 +27,38 @@ class DependencySpec:
         return len(self.dependencies)
 
     def __add__(self, other):
-        # Add a DependencySpec object to this. 
-        # Return new DependencySpec object with the union of this and other's dependencies
+        """Add dependencies from a DependencySpec or iterable to this."""
 
-        # Create result
+        if isinstance(other, str):
+            other = [other]
+        elif isinstance(other, int):
+            other = []
+        elif not isinstance(other, DependencySpec):
+            raise TypeError(f"Cannot add {other} of type {type(other)} to DependencySpec")
+
         return DependencySpec(
-            dependencies=sorted(set(self.dependencies+other.dependencies)),
+            dependencies=sorted(
+                set.union(set(self), set(other))
+                if hasattr(other, '__iter__')
+                else set(self)
+            ),
             meta=self.meta
+        )
+
+    def __iadd__(self, other):
+        """Add dependencies from a DependencySpec or iterable to this inplace."""
+
+        if isinstance(other, str):
+            other = [other]
+        elif isinstance(other, int):
+            other = []
+        elif not isinstance(other, DependencySpec):
+            raise TypeError(f"Cannot add {other} of type {type(other)} to DependencySpec")
+
+        self.dependencies=sorted(
+            set.union(set(self), set(other))
+            if hasattr(other, '__iter__')
+            else set(self)
         )
 
     def __getitem__(self, attr):
