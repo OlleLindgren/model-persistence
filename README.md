@@ -7,4 +7,4 @@ ModelContainer is an extension of DependencySpec, where we essentially pack a mo
 
 # install
 
-`pip install git+https://github.com/OlleLindgren/model-persistence@v0.1.1`
+`pip install git+https://github.com/OlleLindgren/model-persistence@main`
