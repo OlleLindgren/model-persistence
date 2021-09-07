@@ -80,7 +80,7 @@ class DependencySpec:
                 if a not in self.dependencies:
                     raise ValueError(f"Dependency {a} not found in dependencies")
             return DependencySpec(
-                dependencies=[attr],
+                dependencies=list(attr),
                 meta=self.meta
             )
 
