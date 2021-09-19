@@ -10,7 +10,7 @@ setuptools.setup(
     version="v0.1.3",
     author="Olle Lindgren",
     author_email="lindgrenolle@live.se",
-    description="A package for manaing model persistence",
+    description="A package for managing model persistence",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/OlleLindgren/datasystems",
