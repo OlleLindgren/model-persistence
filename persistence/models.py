@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os
 from pathlib import Path
 import datetime
@@ -7,10 +6,10 @@ import json
 from typing import Iterable
 
 if __package__:
-    from .dependencies import DependencySpec
+    from .dependencies import DependencySpecType
     from . import model_io
 else:
-    from dependencies import DependencySpec
+    from dependencies import DependencySpecType
     import model_io
 
 DATE_STR_FORMAT = r"%Y-%m-%d"
@@ -36,8 +35,8 @@ class ModelContainer:
 
     def __init__(self, 
             model: BaseEstimator, 
-            X_spec: DependencySpec|list[DependencySpec], 
-            y_spec: DependencySpec|list[DependencySpec], 
+            X_spec: DependencySpecType, 
+            y_spec: DependencySpecType, 
             dt: datetime.timedelta = datetime.timedelta(seconds=0), 
             eval_metrics=None
         ) -> None:
@@ -50,8 +49,8 @@ class ModelContainer:
             "eval_metrics (if provided) must be a dict of {metric: value} pairs"
 
         self.model: BaseEstimator = model
-        self.X_spec: DependencySpec|list[DependencySpec] = X_spec
-        self.y_spec: DependencySpec|list[DependencySpec] = y_spec
+        self.X_spec: DependencySpecType = X_spec
+        self.y_spec: DependencySpecType = y_spec
         self.dt: datetime.timedelta = dt
         self.eval_metrics: dict = eval_metrics or {}
 
@@ -79,23 +78,17 @@ class ModelContainer:
         return datetime.timedelta(**delta)
 
     @staticmethod
-    def save_spec(spec: DependencySpec|list[DependencySpec], path: Path) -> None:
-        """Save a DependencySpec or list of DependencySpecs to a path"""
+    def save_spec(spec: DependencySpecType, path: Path) -> None:
+        """Save a DependencySpecType to a path"""
         with open(path, 'w+') as f:
-            if isinstance(spec, DependencySpec):
-                f.write(json.dumps(spec.to_dict(), indent=2))
-            else:
-                f.write(json.dumps([sp.to_dict() for sp in spec], indent=2))
+            f.write(json.dumps(spec.to_dict(), indent=2))
 
     @staticmethod
-    def load_spec(path: Path) -> DependencySpec|list[DependencySpec]:
-        """Load a DependencySpec or list of DependencySpecs from path"""
+    def load_spec(path: Path) -> DependencySpecType:
+        """Load a DependencySpecType from path"""
         with open(path, 'r') as f:
             dictionary = json.loads(f.read())
-            if isinstance(dictionary, dict):
-                return DependencySpec.from_dict(dictionary)
-            else:
-                return [DependencySpec.from_dict(d) for d in dictionary]
+            DependencySpecType.from_dict(dictionary)
 
     def save(self, path: Path) -> None:
         # Save model to model directory, along with everything needed to run the model
