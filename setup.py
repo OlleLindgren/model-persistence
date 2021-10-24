@@ -1,13 +1,20 @@
 import setuptools
+from pathlib import Path
 
-with open("README.md", "r") as fh:
+src_root = Path(__file__).parent
+
+with open(src_root / "README.md", "r") as fh:
     long_description = fh.read()
 
-requirements=[]
+requirements = []
+
+with open(src_root / '__init__.py', "r") as f:
+    __version_line = next(filter(lambda s: 'version' in s, f.readlines()))
+    version = __version_line.split('=')[-1].strip(" \n\"")
 
 setuptools.setup(
     name="model_persistence",
-    version="v0.1.3",
+    version=version,
     author="Olle Lindgren",
     author_email="lindgrenolle@live.se",
     description="A package for managing model persistence",

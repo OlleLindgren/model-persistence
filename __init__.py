@@ -1,1 +1,1 @@
-from persistence import DependencySpec, ModelContainer
+__version__ = version = "0.2"
