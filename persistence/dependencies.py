@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import itertools
 import json
+
 from abc import ABC, abstractproperty, abstractmethod
+from collections import Counter
 from pathlib import Path
 from typing import List
 
@@ -44,13 +47,16 @@ class DependencySpecType(ABC):
             )
 
     @staticmethod
-    def from_dict(dictionary: dict):
-        if "dependencies" in dictionary and "children" not in dictionary:
-            return DependencySpec(**dictionary)
-        elif "children" in dictionary and "dependencies" not in dictionary:
-            return NestedDependencySpec(**dictionary)
+    def from_dict(dictionary: dict|list):
+        if isinstance(dictionary, dict):
+            if "dependencies" in dictionary:
+                return DependencySpec(**dictionary)
+            else:
+                raise ValueError(f"Invalid dictionary: {dictionary}")
+        elif isinstance(dictionary, list):
+            return NestedDependencySpec(children=[DependencySpecType.from_dict(d) for d in dictionary])
         else:
-            raise ValueError(f"Invalid dictionary: {dictionary}")
+            raise TypeError(f"from_dict argument must be dict or list, not {type(dictionary)}")
 
     def save(self, path: Path):
         with open(path, 'w+') as f:
@@ -145,16 +151,29 @@ class DependencySpec(DependencySpecType):
 
 class NestedDependencySpec(DependencySpecType):
     
-    def __init__(self, children: List[DependencySpec]|List[dict], meta: dict = None, **kwargs) -> None:
+    def __init__(self, children: List[DependencySpecType], meta: dict = None, **kwargs) -> None:
 
-        if not all(isinstance(x, DependencySpec) or isinstance(x, dict) for x in children):
-            raise TypeError("All children of NestedDependencySpec must be DependencySpecs or dicts")
+        if any(isinstance(child, str) for child in children):
+            raise TypeError("NestedDependencySpec cannot have str children, "
+                            "did you mean to construct a DependencySpec?")
 
-        self.children = [ch if isinstance(ch, DependencySpecType) else self.from_dict(ch) for ch in children]
+        self.children = children
 
         # Validate inputs
         assert len(children) > 0
-        assert len(set(self.dependencies)) == len(self.dependencies), 'dependencies must be unique'
+        if len(set(self.dependencies)) != len(self.dependencies):
+            print("Some dependencies found multiple times. Violators:")
+            cnt = Counter()
+            for dep in self.dependencies:
+                cnt[dep] += 1
+            longest_dep_name = max(map(len, cnt.keys()))
+            longest_ntimes_str = max(map(len, map(str, cnt.values())))
+            for dep, n_finds in cnt.items():
+                if n_finds > 1:
+                    spacing1 = ' '*(longest_dep_name - len(dep))
+                    spacing2 = ' '*(longest_ntimes_str - len(str(n_finds)))
+                    print(f"{dep} {spacing1} found {n_finds} {spacing2} times.")
+            raise ValueError('some dependencies exist multiple times')
 
         # Save additional kwargs in self.meta
         self.meta = meta or {}
