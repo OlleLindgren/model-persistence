@@ -4,6 +4,7 @@ from pathlib import Path
 import datetime
 import json
 
+from abc import ABC, abstractmethod
 from typing import Iterable
 
 if __package__:
@@ -32,17 +33,29 @@ X_SPEC_FILENAME: str = "X_spec.json"
 Y_SPEC_FILENAME: str = "y_spec.json"
 EXTRAS_FILENAME: str = "extras.json"
 
-from abc import ABC, abstractmethod
+ENCODING = 'UTF-8'
 
 
 class BaseEstimator(ABC):
     @abstractmethod
     def fit(X: Iterable, y: Iterable) -> None:
-        pass
+        """Fit model
+
+        Args:
+            X (Iterable): [description]
+            y (Iterable): [description]
+        """
 
     @abstractmethod
     def predict(X: Iterable) -> Iterable:
-        pass
+        """Predict with model
+
+        Args:
+            X (Iterable): [description]
+
+        Returns:
+            Iterable: [description]
+        """
 
 
 class ModelContainer:
@@ -93,14 +106,14 @@ class ModelContainer:
     @staticmethod
     def save_spec(spec: DependencySpecType, path: Path) -> None:
         """Save a DependencySpecType to a path"""
-        with open(path, 'w+') as f:
-            f.write(json.dumps(spec.to_dict(), indent=2))
+        with open(path, 'w+', encoding=ENCODING) as handle:
+            handle.write(json.dumps(spec.to_dict(), indent=2))
 
     @staticmethod
     def load_spec(path: Path) -> DependencySpecType:
         """Load a DependencySpecType from path"""
-        with open(path, 'r') as f:
-            dictionary = json.loads(f.read())
+        with open(path, 'r', encoding=ENCODING) as handle:
+            dictionary = json.loads(handle.read())
             DependencySpecType.from_dict(dictionary)
 
     def save(self, path: Path) -> None:
@@ -134,8 +147,8 @@ class ModelContainer:
         self.save_spec(self.y_spec, y_spec_path)
 
         # Write extras
-        with open(extras_path, 'w') as f:
-            f.write(json.dumps(extras, indent=2))
+        with open(extras_path, 'w', encoding=ENCODING) as handle:
+            handle.write(json.dumps(extras, indent=2))
 
     @staticmethod
     def load(path: Path):
@@ -167,8 +180,8 @@ class ModelContainer:
         y_spec = ModelContainer.load_spec(y_spec_path)
 
         # Eval metrics and dt are stored in the little extras file
-        with open(extras_path, 'r') as f:
-            extras = json.loads(f.read())
+        with open(extras_path, 'r', encoding=ENCODING) as handle:
+            extras = json.loads(handle.read())
 
         eval_metrics = extras["eval_metrics"]
         dt = ModelContainer.__dict_to_timedelta(extras["dt"])
