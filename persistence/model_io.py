@@ -1,3 +1,4 @@
+"""Tools for saving and loading models with keras and joblib (sklearn)"""
 from pathlib import Path
 
 KERAS_MODEL_SAVE_FORMAT = 'tf'
@@ -26,9 +27,9 @@ exporters = []
 # Fill importer/exporter lists
 
 if keras:
+
     def save_keras(model: keras.Model, path: Path):
-        model.save(path, 
-            save_format=KERAS_MODEL_SAVE_FORMAT)
+        model.save(path, save_format=KERAS_MODEL_SAVE_FORMAT)
 
     def load_keras(path: Path) -> keras.Model:
         return keras.models.load_model(path)
@@ -37,14 +38,16 @@ if keras:
     importers.append(load_keras)
 
 if joblib:
+
     def save_pickle(model, path: Path):
         joblib.dump(model, path)
-    
+
     def load_pickle(path: Path):
         return joblib.load(path)
-        
+
     exporters.append(save_pickle)
     importers.append(load_pickle)
+
 
 def save(model, path: Path) -> None:
     # Save a model to a file
@@ -58,6 +61,7 @@ def save(model, path: Path) -> None:
 
     return success
 
+
 def load(path: Path):
     # Load a model from a file
     for import_func in importers:
@@ -67,8 +71,11 @@ def load(path: Path):
             return result
         except BaseException as err:
             pass
-    
+
     raise err
 
-# Check that any exporters/importers were successfully loaded
-assert len(importers) > 0, "No import libraries available. tensorflow or joblib is required, depending on what models you want to load."
+
+if __package__ and not importers and not exporters:
+    raise ImportError(
+        "No importers or exporters loaded. Install joblib (sklearn) or tensorflow, or set the SKIP_PERSISTENCE_LOADERS environment variable."
+    )

@@ -1,3 +1,4 @@
+"""In this file, the ModelContainer class is defined, as well as some helper logic"""
 import os
 from pathlib import Path
 import datetime
@@ -7,10 +8,22 @@ from typing import Iterable
 
 if __package__:
     from .dependencies import DependencySpecType
-    from . import model_io
+    if os.getenv("SKIP_PERSISTENCE_LOADERS"):
+        try:
+            from . import model_io
+        except ImportError as err:
+            pass
+    else:
+        from . import model_io
 else:
     from dependencies import DependencySpecType
-    import model_io
+    if os.getenv("SKIP_PERSISTENCE_LOADERS"):
+        try:
+            import model_io
+        except ImportError as err:
+            pass
+    else:
+        import model_io
 
 DATE_STR_FORMAT = r"%Y-%m-%d"
 
@@ -21,25 +34,25 @@ EXTRAS_FILENAME: str = "extras.json"
 
 from abc import ABC, abstractmethod
 
-class BaseEstimator(ABC):
 
+class BaseEstimator(ABC):
     @abstractmethod
     def fit(X: Iterable, y: Iterable) -> None:
         pass
-    
+
     @abstractmethod
     def predict(X: Iterable) -> Iterable:
         pass
 
-class ModelContainer:
 
-    def __init__(self, 
-            model: BaseEstimator, 
-            X_spec: DependencySpecType, 
-            y_spec: DependencySpecType, 
-            dt: datetime.timedelta = datetime.timedelta(seconds=0), 
-            eval_metrics=None
-        ) -> None:
+class ModelContainer:
+    """Container for a model, X_spec, y_spec, and other metadata used to specify a model"""
+    def __init__(self,
+                 model: BaseEstimator,
+                 X_spec: DependencySpecType,
+                 y_spec: DependencySpecType,
+                 dt: datetime.timedelta = datetime.timedelta(seconds=0),
+                 eval_metrics=None) -> None:
 
         assert hasattr(model, "predict"), "model must implement 'predict'"
         assert hasattr(model, "fit"), "model must implement 'fit'"
@@ -91,8 +104,14 @@ class ModelContainer:
             DependencySpecType.from_dict(dictionary)
 
     def save(self, path: Path) -> None:
-        # Save model to model directory, along with everything needed to run the model
-        # This will overwrite existing files without asking
+        """Save model to model directory, along with everything needed to run the model.
+        This will overwrite existing files without asking
+
+        Args:
+            path (Path): The path to save to (will create a folder at this location)
+        """
+        #
+        #
 
         # Pack extras
         extras = {
@@ -102,7 +121,8 @@ class ModelContainer:
         }
 
         # Get paths to the different files we're going to save
-        model_path, X_spec_path, y_spec_path, extras_path = self.__model_save_paths(path)
+        model_path, X_spec_path, y_spec_path, extras_path = self.__model_save_paths(
+            path)
 
         # Ensure parent folder exists
         if not os.path.isdir(path):
@@ -119,25 +139,37 @@ class ModelContainer:
 
     @staticmethod
     def load(path: Path):
-        # Load saved model from path to folder
+        """Load saved model from path to folder
+
+        Args:
+            path (Path): Path to load from
+
+        Returns:
+            ModelContainer: Loaded ModelContainer
+        """
 
         # Get internal paths (i.e. inside the original folder/path)
-        model_path, X_spec_path, y_spec_path, extras_path = ModelContainer.__model_save_paths(path)
+        model_path, X_spec_path, y_spec_path, extras_path = ModelContainer.__model_save_paths(
+            path)
 
         # assert all the paths exist
-        assert os.path.isfile(model_path), f"model save file does not exist: {model_path}"
-        assert os.path.isfile(X_spec_path), f"X_Spec save file does not exist: {X_spec_path}"
-        assert os.path.isfile(y_spec_path), f"y_Spec save file does not exist: {y_spec_path}"
-        assert os.path.isfile(extras_path), f"extras save file does not exist: {extras_path}"
+        assert os.path.isfile(
+            model_path), f"model save file does not exist: {model_path}"
+        assert os.path.isfile(
+            X_spec_path), f"X_Spec save file does not exist: {X_spec_path}"
+        assert os.path.isfile(
+            y_spec_path), f"y_Spec save file does not exist: {y_spec_path}"
+        assert os.path.isfile(
+            extras_path), f"extras save file does not exist: {extras_path}"
 
         model = model_io.load(model_path)
         X_spec = ModelContainer.load_spec(X_spec_path)
         y_spec = ModelContainer.load_spec(y_spec_path)
-        
+
         # Eval metrics and dt are stored in the little extras file
         with open(extras_path, 'r') as f:
             extras = json.loads(f.read())
-        
+
         eval_metrics = extras["eval_metrics"]
         dt = ModelContainer.__dict_to_timedelta(extras["dt"])
 

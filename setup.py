@@ -3,8 +3,8 @@ from pathlib import Path
 
 src_root = Path(__file__).parent
 
-with open(src_root / "README.md", "r") as fh:
-    long_description = fh.read()
+with open(src_root / "README.md", "r") as f:
+    long_description = f.read()
 
 requirements = []
 
