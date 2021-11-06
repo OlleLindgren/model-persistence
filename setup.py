@@ -1,16 +1,14 @@
 import setuptools
 from pathlib import Path
 
-src_root = Path(__file__).parent
+SRC_ROOT = Path(__file__).parent
 
-with open(src_root / "README.md", "r") as f:
+with open(SRC_ROOT / "README.md", "r") as f:
     long_description = f.read()
 
-requirements = []
-
-with open(src_root / '__init__.py', "r") as f:
-    __version_line = next(filter(lambda s: 'version' in s, f.readlines()))
-    version = __version_line.split('=')[-1].strip(" \n\"")
+with open(SRC_ROOT / "__init__.py", "r") as f:
+    version_line = next(filter(lambda l: 'version' in l, f.readlines()))
+    version = version_line.split('=')[-1].strip(" \"'\n")
 
 setuptools.setup(
     name="model_persistence",
