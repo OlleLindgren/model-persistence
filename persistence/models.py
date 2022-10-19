@@ -1,14 +1,14 @@
 """In this file, the ModelContainer class is defined, as well as some helper logic"""
-import os
-from pathlib import Path
 import datetime
 import json
-
+import os
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Iterable
 
 if __package__:
     from .dependencies import DependencySpecType
+
     if os.getenv("SKIP_PERSISTENCE_LOADERS"):
         try:
             from . import model_io
@@ -18,6 +18,7 @@ if __package__:
         from . import model_io
 else:
     from dependencies import DependencySpecType
+
     if os.getenv("SKIP_PERSISTENCE_LOADERS"):
         try:
             import model_io
@@ -32,8 +33,6 @@ MODEL_FILENAME: str = "model"
 X_SPEC_FILENAME: str = "X_spec.json"
 Y_SPEC_FILENAME: str = "y_spec.json"
 EXTRAS_FILENAME: str = "extras.json"
-
-ENCODING = 'UTF-8'
 
 
 class BaseEstimator(ABC):
@@ -60,19 +59,23 @@ class BaseEstimator(ABC):
 
 class ModelContainer:
     """Container for a model, X_spec, y_spec, and other metadata used to specify a model"""
-    def __init__(self,
-                 model: BaseEstimator,
-                 X_spec: DependencySpecType,
-                 y_spec: DependencySpecType,
-                 dt: datetime.timedelta = datetime.timedelta(seconds=0),
-                 eval_metrics=None) -> None:
+
+    def __init__(
+        self,
+        model: BaseEstimator,
+        X_spec: DependencySpecType,
+        y_spec: DependencySpecType,
+        dt: datetime.timedelta = datetime.timedelta(seconds=0),
+        eval_metrics=None,
+    ) -> None:
 
         assert hasattr(model, "predict"), "model must implement 'predict'"
         assert hasattr(model, "fit"), "model must implement 'fit'"
 
         if eval_metrics:
-            assert isinstance(eval_metrics, dict), \
-            "eval_metrics (if provided) must be a dict of {metric: value} pairs"
+            assert isinstance(
+                eval_metrics, dict
+            ), "eval_metrics (if provided) must be a dict of {metric: value} pairs"
 
         self.model: BaseEstimator = model
         self.X_spec: DependencySpecType = X_spec
@@ -93,11 +96,7 @@ class ModelContainer:
 
     @staticmethod
     def __timedelta_to_dict(delta: datetime.timedelta) -> dict:
-        return {
-            "days": delta.days,
-            "seconds": delta.seconds,
-            "microseconds": delta.microseconds
-        }
+        return {"days": delta.days, "seconds": delta.seconds, "microseconds": delta.microseconds}
 
     @staticmethod
     def __dict_to_timedelta(delta: dict) -> datetime.timedelta:
@@ -106,13 +105,13 @@ class ModelContainer:
     @staticmethod
     def save_spec(spec: DependencySpecType, path: Path) -> None:
         """Save a DependencySpecType to a path"""
-        with open(path, 'w+', encoding=ENCODING) as handle:
+        with open(path, "w+", encoding="utf-8") as handle:
             handle.write(json.dumps(spec.to_dict(), indent=2))
 
     @staticmethod
     def load_spec(path: Path) -> DependencySpecType:
         """Load a DependencySpecType from path"""
-        with open(path, 'r', encoding=ENCODING) as handle:
+        with open(path, "r", encoding="utf-8") as handle:
             dictionary = json.loads(handle.read())
             DependencySpecType.from_dict(dictionary)
 
@@ -130,12 +129,11 @@ class ModelContainer:
         extras = {
             "eval_metrics": self.eval_metrics,
             "dt": self.__timedelta_to_dict(self.dt),
-            "save_timestamp": datetime.datetime.now().strftime(DATE_STR_FORMAT)
+            "save_timestamp": datetime.datetime.now().strftime(DATE_STR_FORMAT),
         }
 
         # Get paths to the different files we're going to save
-        model_path, X_spec_path, y_spec_path, extras_path = self.__model_save_paths(
-            path)
+        model_path, X_spec_path, y_spec_path, extras_path = self.__model_save_paths(path)
 
         # Ensure parent folder exists
         if not os.path.isdir(path):
@@ -147,7 +145,7 @@ class ModelContainer:
         self.save_spec(self.y_spec, y_spec_path)
 
         # Write extras
-        with open(extras_path, 'w', encoding=ENCODING) as handle:
+        with open(extras_path, "w", encoding="utf-8") as handle:
             handle.write(json.dumps(extras, indent=2))
 
     @staticmethod
@@ -162,25 +160,20 @@ class ModelContainer:
         """
 
         # Get internal paths (i.e. inside the original folder/path)
-        model_path, X_spec_path, y_spec_path, extras_path = ModelContainer.__model_save_paths(
-            path)
+        model_path, X_spec_path, y_spec_path, extras_path = ModelContainer.__model_save_paths(path)
 
         # assert all the paths exist
-        assert os.path.isfile(
-            model_path), f"model save file does not exist: {model_path}"
-        assert os.path.isfile(
-            X_spec_path), f"X_Spec save file does not exist: {X_spec_path}"
-        assert os.path.isfile(
-            y_spec_path), f"y_Spec save file does not exist: {y_spec_path}"
-        assert os.path.isfile(
-            extras_path), f"extras save file does not exist: {extras_path}"
+        assert os.path.isfile(model_path), f"model save file does not exist: {model_path}"
+        assert os.path.isfile(X_spec_path), f"X_Spec save file does not exist: {X_spec_path}"
+        assert os.path.isfile(y_spec_path), f"y_Spec save file does not exist: {y_spec_path}"
+        assert os.path.isfile(extras_path), f"extras save file does not exist: {extras_path}"
 
         model = model_io.load(model_path)
         X_spec = ModelContainer.load_spec(X_spec_path)
         y_spec = ModelContainer.load_spec(y_spec_path)
 
         # Eval metrics and dt are stored in the little extras file
-        with open(extras_path, 'r', encoding=ENCODING) as handle:
+        with open(extras_path, "r", encoding="utf-8") as handle:
             extras = json.loads(handle.read())
 
         eval_metrics = extras["eval_metrics"]

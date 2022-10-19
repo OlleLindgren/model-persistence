@@ -8,8 +8,6 @@ from collections import Counter
 from pathlib import Path
 from typing import List
 
-ENCODING = "UTF-8"
-
 
 class DependencySpecType(ABC):
     """Abstract base class for all DependencySpec classes"""
@@ -85,7 +83,7 @@ class DependencySpecType(ABC):
         Args:
             path (Path): The path to save to
         """
-        with open(path, "w+", encoding=ENCODING) as handle:
+        with open(path, "w+", encoding="utf-8") as handle:
             handle.write(json.dumps(self.to_dict(), indent=2))
 
     @staticmethod
@@ -99,7 +97,7 @@ class DependencySpecType(ABC):
             DependencySpecType: The loaded dependencySpec,
             either a DependencySpec or NestedDependencySpec.
         """
-        with open(path, "r", encoding=ENCODING) as handle:
+        with open(path, "r", encoding="utf-8") as handle:
             dictionary = json.loads(handle.read())
             return DependencySpec.from_dict(dictionary)
 
