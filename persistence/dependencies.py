@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import itertools
 import json
-
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
 from typing import List
 
-ENCODING = 'UTF-8'
+ENCODING = "UTF-8"
 
 
 class DependencySpecType(ABC):
     """Abstract base class for all DependencySpec classes"""
+
     meta: dict
     defaults: List
 
@@ -36,8 +36,7 @@ class DependencySpecType(ABC):
             raise ValueError(f"Dependency {attr} not found in dependencies")
 
         if isinstance(attr, int):
-            return DependencySpec(dependencies=[self.dependencies[attr]],
-                                  meta=self.meta)
+            return DependencySpec(dependencies=[self.dependencies[attr]], meta=self.meta)
 
         for dep in attr:
             if dep not in self.dependencies:
@@ -60,16 +59,25 @@ class DependencySpecType(ABC):
             [type]: [description]
         """
         if isinstance(dictionary, dict):
-            if "dependencies" in dictionary:
+            if dictionary.keys() <= {"dependencies", "meta"}:
                 return DependencySpec(**dictionary)
+            if dictionary.keys() <= {"children", "meta"}:
+                children = [
+                    DependencySpecType.from_dict(child) for child in dictionary.get("children", [])
+                ]
+                return NestedDependencySpec(
+                    children=children,
+                    meta=dictionary.get("meta", {}),
+                )
+
             raise ValueError(f"Invalid dictionary: {dictionary}")
 
         if isinstance(dictionary, list):
             return NestedDependencySpec(
-                children=[DependencySpecType.from_dict(d) for d in dictionary])
+                children=[DependencySpecType.from_dict(d) for d in dictionary]
+            )
 
-        raise TypeError(
-            f"from_dict argument must be dict or list, not {type(dictionary)}")
+        raise TypeError(f"from_dict argument must be dict or list, not {type(dictionary)}")
 
     def save(self, path: Path):
         """Save self to some path
@@ -77,7 +85,7 @@ class DependencySpecType(ABC):
         Args:
             path (Path): The path to save to
         """
-        with open(path, 'w+', encoding=ENCODING) as handle:
+        with open(path, "w+", encoding=ENCODING) as handle:
             handle.write(json.dumps(self.to_dict(), indent=2))
 
     @staticmethod
@@ -91,7 +99,7 @@ class DependencySpecType(ABC):
             DependencySpecType: The loaded dependencySpec,
             either a DependencySpec or NestedDependencySpec.
         """
-        with open(path, 'r', encoding=ENCODING) as handle:
+        with open(path, "r", encoding=ENCODING) as handle:
             dictionary = json.loads(handle.read())
             return DependencySpec.from_dict(dictionary)
 
@@ -114,17 +122,14 @@ class DependencySpecType(ABC):
 
 class DependencySpec(DependencySpecType):
     """A normal, non-nested DependencySpec"""
-    def __init__(self,
-                 dependencies: List[str],
-                 meta: dict = None,
-                 **kwargs) -> None:
+
+    def __init__(self, dependencies: List[str], meta: dict = None, **kwargs) -> None:
 
         if not all(isinstance(dep, str) for dep in dependencies):
             raise TypeError("All dependencies must be of type str")
         # Validate inputs
         assert len(dependencies) > 0
-        assert len(set(dependencies)) == len(
-            dependencies), 'dependencies must be unique'
+        assert len(set(dependencies)) == len(dependencies), "dependencies must be unique"
 
         # Save dependencies
         self.__dependencies = sorted(dependencies)
@@ -145,13 +150,14 @@ class DependencySpec(DependencySpecType):
         elif isinstance(other, int):
             other = []
         elif not isinstance(other, DependencySpec):
-            raise TypeError(
-                f"Cannot add {other} of type {type(other)} to DependencySpec")
+            raise TypeError(f"Cannot add {other} of type {type(other)} to DependencySpec")
 
-        return DependencySpec(dependencies=sorted(
-            set.union(set(self), set(other)) if hasattr(other, '__iter__'
-                                                        ) else set(self)),
-                              meta=self.meta)
+        return DependencySpec(
+            dependencies=sorted(
+                set.union(set(self), set(other)) if hasattr(other, "__iter__") else set(self)
+            ),
+            meta=self.meta,
+        )
 
     def __iadd__(self, other):
         """Add dependencies from a DependencySpec or iterable to this inplace."""
@@ -161,16 +167,14 @@ class DependencySpec(DependencySpecType):
         elif isinstance(other, int):
             other = []
         elif not isinstance(other, DependencySpec):
-            raise TypeError(
-                f"Cannot add {other} of type {type(other)} to DependencySpec")
+            raise TypeError(f"Cannot add {other} of type {type(other)} to DependencySpec")
 
         self.dependencies = sorted(
-            set.union(set(self), set(other)) if hasattr(other, '__iter__'
-                                                        ) else set(self))
+            set.union(set(self), set(other)) if hasattr(other, "__iter__") else set(self)
+        )
 
     def __str__(self):
-        result = 'DependencySpec object with dependencies:' + str(
-            self.dependencies)
+        result = "DependencySpec object with dependencies:" + str(self.dependencies)
         return result
 
     def to_dict(self):
@@ -179,14 +183,14 @@ class DependencySpec(DependencySpecType):
 
 class NestedDependencySpec(DependencySpecType):
     """A nested DependencySpec."""
-    def __init__(self,
-                 children: List[DependencySpecType],
-                 meta: dict = None,
-                 **kwargs) -> None:
+
+    def __init__(self, children: List[DependencySpecType], meta: dict = None, **kwargs) -> None:
 
         if any(isinstance(child, str) for child in children):
-            raise TypeError("NestedDependencySpec cannot have str children, "
-                            "did you mean to construct a DependencySpec?")
+            raise TypeError(
+                "NestedDependencySpec cannot have str children, "
+                "did you mean to construct a DependencySpec?"
+            )
 
         self.children = children
 
@@ -201,11 +205,10 @@ class NestedDependencySpec(DependencySpecType):
             longest_ntimes_str = max(map(len, map(str, cnt.values())))
             for dep, n_finds in cnt.items():
                 if n_finds > 1:
-                    spacing1 = ' ' * (longest_dep_name - len(dep))
-                    spacing2 = ' ' * (longest_ntimes_str - len(str(n_finds)))
-                    print(
-                        f"{dep} {spacing1} found {n_finds} {spacing2} times.")
-            raise ValueError('some dependencies exist multiple times')
+                    spacing1 = " " * (longest_dep_name - len(dep))
+                    spacing2 = " " * (longest_ntimes_str - len(str(n_finds)))
+                    print(f"{dep} {spacing1} found {n_finds} {spacing2} times.")
+            raise ValueError("some dependencies exist multiple times")
 
         # Save additional kwargs in self.meta
         self.meta = meta or {}
@@ -213,16 +216,14 @@ class NestedDependencySpec(DependencySpecType):
 
     @property
     def dependencies(self) -> List[str]:
-        return list(
-            itertools.chain(*(child.dependencies for child in self.children)))
+        return list(itertools.chain(*(child.dependencies for child in self.children)))
 
     def __add__(self, other: DependencySpec):
         if not isinstance(other, DependencySpec):
             raise TypeError(
                 f"Cannot add '{other}' of type type {type(other)} to NestedDependencySpec"
             )
-        return NestedDependencySpec(children=self.children + other,
-                                    meta=self.meta)
+        return NestedDependencySpec(children=self.children + other, meta=self.meta)
 
     def __iadd__(self, other: DependencySpec):
         if not isinstance(other, DependencySpec):
@@ -230,17 +231,14 @@ class NestedDependencySpec(DependencySpecType):
                 f"Cannot add '{other}' of type type {type(other)} to NestedDependencySpec"
             )
         if not set(self.dependencies).isdisjoint(other.dependencies):
-            raise ValueError(
-                "Dependencies in other overlaps with self; cannot add")
+            raise ValueError("Dependencies in other overlaps with self; cannot add")
         self.children.append(other)
 
     def __str__(self):
-        result = "NestedDependencySpec object with dependencies:\n  " + '\n  '.join(
-            map(str, self.dependencies))
+        result = "NestedDependencySpec object with dependencies:\n  " + "\n  ".join(
+            map(str, self.dependencies)
+        )
         return result
 
     def to_dict(self):
-        return {
-            "children": [child.to_dict() for child in self.children],
-            "meta": self.meta or {}
-        }
+        return {"children": [child.to_dict() for child in self.children], "meta": self.meta or {}}
