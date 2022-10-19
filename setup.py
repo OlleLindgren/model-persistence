@@ -15,7 +15,7 @@ setuptools.setup(
     description="A package for managing model persistence",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/OlleLindgren/datasystems",
+    url="https://github.com/OlleLindgren/model-persistence",
     packages=setuptools.find_packages(),
     install_requires=[],
     classifiers=[
