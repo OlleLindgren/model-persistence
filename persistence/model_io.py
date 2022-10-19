@@ -1,7 +1,7 @@
 """Tools for saving and loading models with keras and joblib (sklearn)"""
 from pathlib import Path
 
-KERAS_MODEL_SAVE_FORMAT = 'tf'
+KERAS_MODEL_SAVE_FORMAT = "tf"
 
 # Try to import keras. Return (keras, True) or (None, False) depending on result.
 keras = None

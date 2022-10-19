@@ -1,18 +1,15 @@
-import setuptools
 from pathlib import Path
+
+import setuptools
 
 SRC_ROOT = Path(__file__).parent
 
 with open(SRC_ROOT / "README.md", "r") as f:
     long_description = f.read()
 
-with open(SRC_ROOT / "__init__.py", "r") as f:
-    version_line = next(filter(lambda l: 'version' in l, f.readlines()))
-    version = version_line.split('=')[-1].strip(" \"'\n")
-
 setuptools.setup(
     name="model_persistence",
-    version=version,
+    version="0.2.4",
     author="Olle Lindgren",
     author_email="lindgrenolle@live.se",
     description="A package for managing model persistence",
@@ -26,5 +23,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.0',
+    python_requires=">=3.8",
 )
